@@ -96,7 +96,7 @@ public class Person extends JFrame implements MouseListener {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				new Sql();
-				new Person(true, 1);
+				new Person(false, 2);
 			}
 		});
 	}
@@ -239,7 +239,7 @@ public class Person extends JFrame implements MouseListener {
 			}
 		}
 		if (e.getSource() == table_answer) {
-			if (e.getClickCount() == 2) {
+			if (e.getClickCount() == 2) {//双击弹出答案
 				String curDate = dateFormat.format(new Date());
 				String endTime = table_question.getValueAt(table_question.getSelectedRow(), 3).toString();
 				if (!isTeacher && curDate.compareTo(endTime) < 0)
@@ -249,6 +249,9 @@ public class Person extends JFrame implements MouseListener {
 				int sid = Integer.parseInt(table_answer.getValueAt(table_answer.getSelectedRow(), 0).toString());
 				new Answer(qid, sid);
 			}
+			
+			//单击显示相似度
+			refreshAnswerTable();
 		}
 		if (e.getSource() == menuItems[0]) {// 上传题目
 			Sql.uploadQuestion(id);
@@ -289,8 +292,8 @@ public class Person extends JFrame implements MouseListener {
 
 	void refreshAnswerTable() {
 		table_answer.setModel(
-				new DefaultTableModel(Sql.allAnswer(table_question), new String[] { "学号", "姓名", "班级", "分数" }) {
-					Class[] columnTypes = new Class[] { Object.class, Object.class, Object.class, Object.class };
+				new DefaultTableModel(Sql.allAnswer(table_question,table_answer), new String[] { "学号", "姓名", "班级", "分数","相似度" }) {
+					Class[] columnTypes = new Class[] { String.class, String.class, String.class, String.class , String.class};
 
 					public Class getColumnClass(int columnIndex) {
 						return columnTypes[columnIndex];
