@@ -9,15 +9,13 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 
 public class ServerThread extends Thread {
-	private static Connection connection;
-	Socket socket = null;
+	private Socket socket;
+	private Connection connection;
 
-	public ServerThread(Socket socket) {
+	public ServerThread(Socket socket, Connection connection) {
 		try {
 			this.socket = socket;
-			Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-			String dbURL = "jdbc:sqlserver://127.0.0.1:1433;DatabaseName=HomeworkCorrectingSystem";
-			connection = DriverManager.getConnection(dbURL, "sa", "123");
+			this.connection = connection;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
