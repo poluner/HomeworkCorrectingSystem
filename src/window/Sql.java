@@ -644,12 +644,12 @@ public class Sql {
 		return null;
 	}
 
-	static Object[][] allAnswer(JTable t) {
+	static Object[][] allAnswer(JTable t_que,JTable t_ans) {
 		try {
-			int getRow = t.getSelectedRow();
+			int getRow = t_que.getSelectedRow();
 			if (getRow == -1)
 				return null;
-			Object qid = t.getValueAt(getRow, 0);
+			Object qid = t_que.getValueAt(getRow, 0);
 			if (pattern.matcher(qid.toString()).matches() == false)
 				return null;
 
@@ -664,15 +664,35 @@ public class Sql {
 			if (row == 0)
 				return null;
 
-			int col = 4;
+			int col = 5;
 			Object[][] o = new Object[row][col];
 			rs = connection.prepareStatement(sql).executeQuery();
 
 			for (int i = 0; rs.next(); i++) {
-				for (int j = 0; j < col; j++) {
+				for (int j = 0; j < col-1; j++) {
 					o[i][j] = rs.getString(j + 1);
 				}
 			}
+			
+			if(t_ans.getSelectedRow()!=-1){//如果答案表被点了，就显示相似度
+				int ans_row=t_ans.getSelectedRow();
+				Object mySid=o[ans_row][0];
+				String sql_answer="select answer from Answer where qid='"+qid+"' and sid='";
+				ResultSet rs_answer=connection.prepareStatement(sql_answer+mySid+"'").executeQuery();
+				rs_answer.next();
+				String myAnswer=rs_answer.getString(1);
+				for(int i=0;i<row;i++){
+					if(i!=ans_row){
+						Object yourSid=o[i][0];
+						rs_answer=connection.prepareStatement(sql_answer+yourSid+"'").executeQuery();
+						rs_answer.next();
+						String yourAnswer=rs_answer.getString(1);
+						o[i][4]=Lcs.sameDegree(myAnswer, yourAnswer);
+					}
+				}
+			}
+			
+			
 			return o;
 		} catch (Exception e) {
 			e.printStackTrace();
