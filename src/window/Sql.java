@@ -1,34 +1,24 @@
 package window;
 
-import java.awt.CheckboxGroup;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.text.SimpleDateFormat;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Vector;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.swing.ButtonGroup;
 import javax.swing.DefaultCellEditor;
-import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
-import javax.swing.JMenuItem;
 import javax.swing.JTable;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.JTextPane;
 import javax.swing.table.TableColumn;
 import javax.swing.text.JTextComponent;
-import javax.xml.soap.Text;
 
-import org.omg.CORBA.OBJ_ADAPTER;
+import client.Client;
 
 public class Sql {
 	private static Connection connection;
@@ -36,13 +26,6 @@ public class Sql {
 	static Dimension screensize = Toolkit.getDefaultToolkit().getScreenSize();
 
 	public Sql() {
-		try {
-			Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-			String dbURL = "jdbc:sqlserver://127.0.0.1:1433;DatabaseName=HomeworkCorrectingSystem";
-			connection = DriverManager.getConnection(dbURL, "sa", "123");
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 	}
 
 	static boolean pass(boolean isTeacher, String id, String pw) {
@@ -55,7 +38,9 @@ public class Sql {
 			String sql = isTeacher ? "select * from Teacher where tid='" + id + "' and password='" + pw + "'"
 					: "select * from Student where sid='" + id + "' and password='" + pw + "'";
 
-			ResultSet rs = connection.prepareStatement(sql).executeQuery();
+			Client client = new Client();
+			client.writeSql(sql);
+			ResultSet rs = client.readRowSet();
 			if (rs.next())
 				return true;
 		} catch (Exception e) {
@@ -70,7 +55,11 @@ public class Sql {
 		try {
 			String sql = isTeacher ? "select name from Teacher where tid='" + id + "'"
 					: "select name from Student where sid='" + id + "'";
-			ResultSet rs = connection.prepareStatement(sql).executeQuery();
+
+			Client client = new Client();
+			client.writeSql(sql);
+			ResultSet rs = client.readRowSet();
+
 			if (rs.next())
 				return name + rs.getString(1).replace(" ", "");
 		} catch (Exception e) {
@@ -79,15 +68,17 @@ public class Sql {
 		return name;
 	}
 
-	static void uploadQuestion(int tid) {
+	static void uploadQuestion(int tid) {// 插入没问题
 		try {
 			String sql = "select max(qid) from Question";
-			ResultSet rs = connection.prepareStatement(sql).executeQuery();
+			Client client = new Client();
+			client.writeSql(sql);
+			ResultSet rs = client.readRowSet();
 			rs.next();
 			int qid = rs.getInt(1) + 1;
 			new Question(qid, true, tid);
 			sql = "insert into Question(qid,tid)values('" + qid + "','" + tid + "')";
-			connection.prepareStatement(sql).execute();
+			new Client().writeSql(sql);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -97,7 +88,7 @@ public class Sql {
 		try {
 			String sql = "update Question set title='" + title.trim() + "',beginTime='" + beginTime + "',endTime='"
 					+ endTime + "',question='" + question.trim() + "'where qid='" + qid + "'";
-			connection.prepareStatement(sql).execute();
+			new Client().writeSql(sql);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -106,7 +97,7 @@ public class Sql {
 	static void saveAnswer(int qid, String answer) {
 		try {
 			String sql = "update Question set answer='" + answer.trim() + "'where qid='" + qid + "'";
-			connection.prepareStatement(sql).execute();
+			new Client().writeSql(sql);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -114,13 +105,20 @@ public class Sql {
 
 	static void saveYourAnswer(int qid, int sid, String yourAnswer) {
 		try {
-			String sql = "insert into Answer(qid,sid,answer) values('" + qid + "','" + sid + "','" + yourAnswer + "')";
-			connection.prepareStatement(sql).execute();
+			String sql_exist = "select * from Answer where qid='" + qid + "' and sid='" + sid + "'";
+			Client client = new Client();
+			client.writeSql(sql_exist);
+			boolean exist = client.readRowSet().next();
+
+			String sql = exist
+					? "update Answer set answer='" + yourAnswer + "'where qid='" + qid + "'and sid='" + sid + "'"
+					: "insert into Answer(qid,sid,answer) values('" + qid + "','" + sid + "','" + yourAnswer + "')";
+			new Client().writeSql(sql);
 		} catch (Exception e) {
 			try {
 				String sql = "update Answer set answer='" + yourAnswer + "'where qid='" + qid + "'and sid='" + sid
 						+ "'";// 插入失败就更新
-				connection.prepareStatement(sql).execute();
+				new Client().writeSql(sql);
 			} catch (Exception e1) {
 				e1.printStackTrace();
 			}
@@ -130,7 +128,9 @@ public class Sql {
 	static void showAll(int qid, boolean isTeacher, int id, JTextComponent tcs[]) {
 		try {
 			String sql = "select title,beginTime,endTime,question,answer from Question where qid='" + qid + "'";
-			ResultSet rs = connection.prepareStatement(sql).executeQuery();
+			Client client = new Client();
+			client.writeSql(sql);
+			ResultSet rs = client.readRowSet();
 			if (rs.next()) {
 
 				for (int i = 0; i < tcs.length - 1; i++) {
@@ -148,7 +148,9 @@ public class Sql {
 		if (isTeacher == false) {
 			try {
 				String sql = "select answer from Answer where qid='" + qid + "'and sid='" + id + "'";
-				ResultSet rs = connection.prepareStatement(sql).executeQuery();
+				Client client = new Client();
+				client.writeSql(sql);
+				ResultSet rs = client.readRowSet();
 				if (rs.next()) {
 					String yourAnswer = rs.getString(1);
 					if (yourAnswer == null)
@@ -164,7 +166,9 @@ public class Sql {
 	static String showAnswer(int qid, int sid) {
 		try {
 			String sql = "select answer from Answer where qid='" + qid + "'and sid='" + sid + "'";
-			ResultSet rs = connection.prepareStatement(sql).executeQuery();
+			Client client = new Client();
+			client.writeSql(sql);
+			ResultSet rs = client.readRowSet();
 			if (rs.next()) {
 				return rs.getString(1).trim();
 			}
@@ -184,7 +188,9 @@ public class Sql {
 
 				String sql_where = "where qid='" + qid + "'and clid='" + clid + "'";
 				String sql_exist = "select * from QCl " + sql_where;
-				boolean exist = connection.prepareStatement(sql_exist).executeQuery().next();
+				Client client = new Client();
+				client.writeSql(sql_exist);
+				boolean exist = client.readRowSet().next();
 
 				String sql_op = null;
 				if (select && !exist)
@@ -192,7 +198,7 @@ public class Sql {
 				if (!select && exist)
 					sql_op = "delete from QCl " + sql_where;
 				if (sql_op != null)
-					connection.prepareStatement(sql_op).execute();
+					new Client().writeSql(sql_op);
 			}
 
 			// System.out.println("成功选择班级");
@@ -212,7 +218,7 @@ public class Sql {
 			}
 			if (coid != null) {
 				String sql = "update Question set coid='" + coid + "'where qid='" + qid + "'";
-				connection.prepareStatement(sql).execute();
+				new Client().writeSql(sql);
 			}
 
 			// System.out.println("成功选择班级、课程");
@@ -225,7 +231,7 @@ public class Sql {
 		try {
 			Object qid = t.getValueAt(t.getSelectedRow(), 0);
 			String sql = "update QuestionSet set aid='" + qid + "' where qid='" + qid + "'";
-			connection.prepareStatement(sql).execute();
+			new Client().writeSql(sql);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -243,7 +249,7 @@ public class Sql {
 			format.setLenient(false);
 			if (title != null) {
 				String sql = "update QuestionSet set title='" + title + "'where qid='" + qid + "'";
-				connection.prepareStatement(sql).execute();
+				new Client().writeSql(sql);
 			}
 			if (beginTime != null) {
 				Object oet = t.getValueAt(row, 3);
@@ -252,7 +258,7 @@ public class Sql {
 				}
 				format.parse(beginTime.toString());
 				String sql = "update QuestionSet set beginTime='" + beginTime + "'where qid='" + qid + "'";
-				connection.prepareStatement(sql).execute();
+				new Client().writeSql(sql);
 			}
 			if (endTime != null) {
 				Object obt = t.getValueAt(row, 2);
@@ -261,60 +267,68 @@ public class Sql {
 				}
 				format.parse(endTime.toString());
 				String sql = "update QuestionSet set endTime='" + endTime + "'where qid='" + qid + "'";
-				connection.prepareStatement(sql).execute();
+				new Client().writeSql(sql);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	static void uploadTeacher(JTable t) {
+	static void uploadTeacher(JTable t) {// 插入没问题
 		try {
 			String sql = "select max(tid) from Teacher";
-			ResultSet rs = connection.prepareStatement(sql).executeQuery();
+			Client client = new Client();
+			client.writeSql(sql);
+			ResultSet rs = client.readRowSet();
 			rs.next();
 			int tid = rs.getInt(1) + 1;
 			sql = "insert into Teacher(tid)values('" + tid + "')";
-			connection.prepareStatement(sql).execute();
+			new Client().writeSql(sql);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	static void uploadCourse(JTable t) {
+	static void uploadCourse(JTable t) {// 插入没问题
 		try {
 			String sql = "select max(coid) from Course";
-			ResultSet rs = connection.prepareStatement(sql).executeQuery();
+			Client client = new Client();
+			client.writeSql(sql);
+			ResultSet rs = client.readRowSet();
 			rs.next();
 			int coid = rs.getInt(1) + 1;
 			sql = "insert into Course(coid)values('" + coid + "')";
-			connection.prepareStatement(sql).execute();
+			new Client().writeSql(sql);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	static void uploadClass(JTable t) {
+	static void uploadClass(JTable t) {// 插入没问题
 		try {
 			String sql = "select max(clid) from Class";
-			ResultSet rs = connection.prepareStatement(sql).executeQuery();
+			Client client = new Client();
+			client.writeSql(sql);
+			ResultSet rs = client.readRowSet();
 			rs.next();
 			int clid = rs.getInt(1) + 1;
 			sql = "insert into Class(clid)values('" + clid + "')";
-			connection.prepareStatement(sql).execute();
+			new Client().writeSql(sql);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	static void uploadStudent(JTable t) {
+	static void uploadStudent(JTable t) {// 插入没问题
 		try {
 			String sql = "select max(sid) from Student";
-			ResultSet rs = connection.prepareStatement(sql).executeQuery();
+			Client client = new Client();
+			client.writeSql(sql);
+			ResultSet rs = client.readRowSet();
 			rs.next();
 			int sid = rs.getInt(1) + 1;
 			sql = "insert into Student(sid)values('" + sid + "')";
-			connection.prepareStatement(sql).execute();
+			new Client().writeSql(sql);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -324,7 +338,7 @@ public class Sql {
 		try {
 			Object qid = t.getValueAt(t.getSelectedRow(), 0);
 			String sql = "delete from Question where qid='" + qid + "'";
-			connection.prepareStatement(sql).execute();
+			new Client().writeSql(sql);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -336,7 +350,7 @@ public class Sql {
 				return;
 			Object tid = t.getValueAt(t.getSelectedRow(), 0);
 			String sql = "delete from Teacher where tid='" + tid + "'";
-			connection.prepareStatement(sql).execute();
+			new Client().writeSql(sql);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -348,7 +362,7 @@ public class Sql {
 				return;
 			Object coid = t.getValueAt(t.getSelectedRow(), 0);
 			String sql = "delete from Course where coid='" + coid + "'";
-			connection.prepareStatement(sql).execute();
+			new Client().writeSql(sql);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -360,7 +374,7 @@ public class Sql {
 				return;
 			Object clid = t.getValueAt(t.getSelectedRow(), 0);
 			String sql = "delete from Class where clid='" + clid + "'";
-			connection.prepareStatement(sql).execute();
+			new Client().writeSql(sql);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -372,7 +386,7 @@ public class Sql {
 				return;
 			Object sid = t.getValueAt(t.getSelectedRow(), 0);
 			String sql = "delete from Student where sid='" + sid + "'";
-			connection.prepareStatement(sql).execute();
+			new Client().writeSql(sql);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -394,7 +408,7 @@ public class Sql {
 					name = "";
 				String sql = "update Teacher set password='" + password.toString().replace(" ", "") + "',name='"
 						+ name.toString().replace(" ", "") + "' where tid='" + tid + "'";
-				connection.prepareStatement(sql).execute();
+				new Client().writeSql(sql);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -414,7 +428,7 @@ public class Sql {
 					name = "";
 				String sql = "update Course set name='" + name.toString().replace(" ", "") + "' where coid='" + coid
 						+ "'";
-				connection.prepareStatement(sql).execute();
+				new Client().writeSql(sql);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -434,7 +448,7 @@ public class Sql {
 					name = "";
 				String sql = "update Class set name='" + name.toString().replace(" ", "") + "' where clid='" + clid
 						+ "'";
-				connection.prepareStatement(sql).execute();
+				new Client().writeSql(sql);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -457,7 +471,7 @@ public class Sql {
 					name = "";
 				String sql = "update Student set password='" + password.toString().replace(" ", "") + "',name='"
 						+ name.toString().replace(" ", "") + "' where sid='" + sid + "'";
-				connection.prepareStatement(sql).execute();
+				new Client().writeSql(sql);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -483,7 +497,10 @@ public class Sql {
 
 				String sql_where = "where tid='" + tid + "'and coid='" + coid + "'";
 				String sql_exist = "select * from TCo " + sql_where;
-				boolean exist = connection.prepareStatement(sql_exist).executeQuery().next();
+				Client client = new Client();
+				client.writeSql(sql_exist);
+
+				boolean exist = client.readRowSet().next();
 
 				String sql_op = null;
 				if (select && !exist)
@@ -491,7 +508,7 @@ public class Sql {
 				if (!select && exist)
 					sql_op = "delete from TCo " + sql_where;
 				if (sql_op != null)
-					connection.prepareStatement(sql_op).execute();
+					new Client().writeSql(sql_op);
 			}
 
 		} catch (Exception e) {
@@ -518,7 +535,9 @@ public class Sql {
 
 				String sql_where = "where clid='" + clid + "'and sid='" + sid + "'";
 				String sql_exist = "select * from SCl " + sql_where;
-				boolean exist = connection.prepareStatement(sql_exist).executeQuery().next();
+				Client client = new Client();
+				client.writeSql(sql_exist);
+				boolean exist = client.readRowSet().next();
 
 				String sql_op = null;
 				if (select && !exist)
@@ -526,7 +545,7 @@ public class Sql {
 				if (!select && exist)
 					sql_op = "delete from SCl " + sql_where;
 				if (sql_op != null)
-					connection.prepareStatement(sql_op).execute();
+					new Client().writeSql(sql_op);
 			}
 
 		} catch (Exception e) {
@@ -553,7 +572,10 @@ public class Sql {
 
 				String sql_where = "where coid='" + coid + "'and clid='" + clid + "'";
 				String sql_exist = "select * from CoCl " + sql_where;
-				boolean exist = connection.prepareStatement(sql_exist).executeQuery().next();
+
+				Client client = new Client();
+				client.writeSql(sql_exist);
+				boolean exist = client.readRowSet().next();
 
 				String sql_op = null;
 				if (select && !exist)
@@ -561,7 +583,7 @@ public class Sql {
 				if (!select && exist)
 					sql_op = "delete from CoCl " + sql_where;
 				if (sql_op != null)
-					connection.prepareStatement(sql_op).execute();
+					new Client().writeSql(sql_op);
 			}
 
 		} catch (Exception e) {
@@ -588,15 +610,17 @@ public class Sql {
 
 				String sql_where = "where tid='" + tid + "'and clid='" + clid + "'";
 				String sql_exist = "select * from TCl " + sql_where;
-				boolean exist = connection.prepareStatement(sql_exist).executeQuery().next();
 
+				Client client = new Client();
+				client.writeSql(sql_exist);
+				boolean exist = client.readRowSet().next();
 				String sql_op = null;
 				if (select && !exist)
 					sql_op = "insert into TCl values('" + tid + "','" + clid + "')";
 				if (!select && exist)
 					sql_op = "delete from TCl " + sql_where;
 				if (sql_op != null)
-					connection.prepareStatement(sql_op).execute();
+					new Client().writeSql(sql_op);
 			}
 
 		} catch (Exception e) {
@@ -611,7 +635,9 @@ public class Sql {
 							: "from Question where qid in(select qid from QCl where clid in( select clid from SCl where sid='"
 									+ id + "'))");
 
-			ResultSet rs = connection.prepareStatement(sql).executeQuery();
+			Client client = new Client();
+			client.writeSql(sql);
+			ResultSet rs = client.readRowSet();
 
 			int row = 0;
 			while (rs.next())
@@ -621,17 +647,23 @@ public class Sql {
 			int col = 6;
 			Object[][] o = new Object[row][col];
 
-			rs = connection.prepareStatement(sql).executeQuery();
+			client = new Client();
+			client.writeSql(sql);
+			rs = client.readRowSet();
 
 			for (int i = 0; rs.next(); i++) {
 				for (int j = 0; j < col - 1; j++) {
 					o[i][j] = rs.getString(j + 1);
 				}
-//				System.out.println("coid=" + o[i][col - 2]);
+				// System.out.println("coid=" + o[i][col - 2]);
 				if (o[i][col - 2] == null)
 					continue;
 				String sql_coName = "select name from Course where coid='" + o[i][col - 2] + "'";
-				ResultSet rs_coName = connection.prepareStatement(sql_coName).executeQuery();
+
+				client = new Client();
+				client.writeSql(sql_coName);
+
+				ResultSet rs_coName = client.readRowSet();
 				if (rs_coName.next())
 					o[i][col - 1] = rs_coName.getString(1);
 			}
@@ -644,7 +676,7 @@ public class Sql {
 		return null;
 	}
 
-	static Object[][] allAnswer(JTable t_que,JTable t_ans) {
+	static Object[][] allAnswer(JTable t_que, JTable t_ans) {
 		try {
 			int getRow = t_que.getSelectedRow();
 			if (getRow == -1)
@@ -656,8 +688,9 @@ public class Sql {
 			String sql = "select a.sid,b.name,c.name,score from Answer a,Student b,Class c,SCl d where qid='" + qid
 					+ "' and a.sid=b.sid and a.sid=d.sid and c.clId=d.clId order by c.name asc,score desc,a.sid asc";
 
-			ResultSet rs = connection.prepareStatement(sql).executeQuery();
-
+			Client client = new Client();
+			client.writeSql(sql);
+			ResultSet rs = client.readRowSet();
 			int row = 0;
 			while (rs.next())
 				row++;
@@ -666,33 +699,40 @@ public class Sql {
 
 			int col = 5;
 			Object[][] o = new Object[row][col];
-			rs = connection.prepareStatement(sql).executeQuery();
-
+			client = new Client();
+			client.writeSql(sql);
+			rs = client.readRowSet();
 			for (int i = 0; rs.next(); i++) {
-				for (int j = 0; j < col-1; j++) {
+				for (int j = 0; j < col - 1; j++) {
 					o[i][j] = rs.getString(j + 1);
 				}
 			}
-			
-			if(t_ans.getSelectedRow()!=-1){//如果答案表被点了，就显示相似度
-				int ans_row=t_ans.getSelectedRow();
-				Object mySid=o[ans_row][0];
-				String sql_answer="select answer from Answer where qid='"+qid+"' and sid='";
-				ResultSet rs_answer=connection.prepareStatement(sql_answer+mySid+"'").executeQuery();
+
+			if (t_ans.getSelectedRow() != -1) {// 如果答案表被点了，就显示相似度
+				int ans_row = t_ans.getSelectedRow();
+				Object mySid = o[ans_row][0];
+				String sql_answer = "select answer from Answer where qid='" + qid + "' and sid='";
+
+				client = new Client();
+				client.writeSql(sql_answer + mySid + "'");
+				ResultSet rs_answer = client.readRowSet();
 				rs_answer.next();
-				String myAnswer=rs_answer.getString(1);
-				for(int i=0;i<row;i++){
-					if(i!=ans_row){
-						Object yourSid=o[i][0];
-						rs_answer=connection.prepareStatement(sql_answer+yourSid+"'").executeQuery();
+				String myAnswer = rs_answer.getString(1);
+				for (int i = 0; i < row; i++) {
+					if (i != ans_row) {
+						Object yourSid = o[i][0];
+
+						client = new Client();
+						client.writeSql(sql_answer + yourSid + "'");
+
+						rs_answer = client.readRowSet();
 						rs_answer.next();
-						String yourAnswer=rs_answer.getString(1);
-						o[i][4]=Lcs.sameDegree(myAnswer, yourAnswer);
+						String yourAnswer = rs_answer.getString(1);
+						o[i][4] = Lcs.sameDegree(myAnswer, yourAnswer);
 					}
 				}
 			}
-			
-			
+
 			return o;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -703,8 +743,9 @@ public class Sql {
 	static Object[][] allTeacher() {
 		try {
 			String sql = "select * from Teacher";
-			ResultSet rs = connection.prepareStatement(sql).executeQuery();
-
+			Client client = new Client();
+			client.writeSql(sql);
+			ResultSet rs = client.readRowSet();
 			int row = 0;
 			while (rs.next())
 				row++;
@@ -712,8 +753,9 @@ public class Sql {
 				return new Object[][] { new Object[] { "右键添加教师" } };
 			int col = 3;
 			Object[][] o = new Object[row][col];
-			rs = connection.prepareStatement(sql).executeQuery();
-
+			client = new Client();
+			client.writeSql(sql);
+			rs = client.readRowSet();
 			for (int i = 0; rs.next(); i++) {
 				for (int j = 0; j < col; j++) {
 					o[i][j] = rs.getString(j + 1);
@@ -729,15 +771,17 @@ public class Sql {
 	static Object[][] allTeacher1() {
 		try {
 			String sql = "select * from Teacher";
-			ResultSet rs = connection.prepareStatement(sql).executeQuery();
-
+			Client client = new Client();
+			client.writeSql(sql);
+			ResultSet rs = client.readRowSet();
 			int row = 0;
 			while (rs.next())
 				row++;
 			int col = 2;
 			Object[][] o = new Object[row][col];
-			rs = connection.prepareStatement(sql).executeQuery();
-
+			client = new Client();
+			client.writeSql(sql);
+			rs = client.readRowSet();
 			for (int i = 0; rs.next(); i++) {
 				o[i][0] = rs.getString(1);
 				o[i][1] = rs.getString(3);
@@ -752,7 +796,9 @@ public class Sql {
 	static Object[][] allClass() {
 		try {
 			String sql = "select * from Class";
-			ResultSet rs = connection.prepareStatement(sql).executeQuery();
+			Client client = new Client();
+			client.writeSql(sql);
+			ResultSet rs = client.readRowSet();
 			int row = 0;
 			while (rs.next())
 				row++;
@@ -761,8 +807,9 @@ public class Sql {
 			int col = 2;
 			Object[][] o = new Object[row][col];
 
-			rs = connection.prepareStatement(sql).executeQuery();
-
+			client = new Client();
+			client.writeSql(sql);
+			rs = client.readRowSet();
 			for (int i = 0; rs.next(); i++) {
 				o[i][0] = rs.getInt(1);
 				o[i][1] = rs.getString(2);
@@ -779,8 +826,9 @@ public class Sql {
 		try {
 
 			String sql = "select * from Class";
-			ResultSet rs = connection.prepareStatement(sql).executeQuery();
-
+			Client client = new Client();
+			client.writeSql(sql);
+			ResultSet rs = client.readRowSet();
 			int row = 0;
 			while (rs.next())
 				row++;
@@ -789,12 +837,16 @@ public class Sql {
 			int col = 3;
 			Object[][] o = new Object[row][col];
 
-			rs = connection.prepareStatement(sql).executeQuery();
-
+			client = new Client();
+			client.writeSql(sql);
+			rs = client.readRowSet();
 			if (coid == null)
 				coid = -1;
 			String sql_selected = "select clid from CoCl where coid='" + coid + "'";
-			ResultSet rs_selectedClass = connection.prepareStatement(sql_selected).executeQuery();
+			client = new Client();
+			client.writeSql(sql_selected);
+
+			ResultSet rs_selectedClass = client.readRowSet();
 
 			Set<Integer> classSet = new HashSet<Integer>();
 			while (rs_selectedClass.next()) {
@@ -816,7 +868,9 @@ public class Sql {
 	static Object[][] allClass2(Object tid) {
 		try {
 			String sql = "select * from Class";
-			ResultSet rs = connection.prepareStatement(sql).executeQuery();
+			Client client = new Client();
+			client.writeSql(sql);
+			ResultSet rs = client.readRowSet();
 			int row = 0;
 			while (rs.next())
 				row++;
@@ -825,12 +879,16 @@ public class Sql {
 			int col = 3;
 			Object[][] o = new Object[row][col];
 
-			rs = connection.prepareStatement(sql).executeQuery();
-
+			client = new Client();
+			client.writeSql(sql);
+			rs = client.readRowSet();
 			if (tid == null)
 				tid = -1;
 			String sql_selected = "select clid from TCl where tid='" + tid + "'";
-			ResultSet rs_selectedClass = connection.prepareStatement(sql_selected).executeQuery();
+			client = new Client();
+			client.writeSql(sql_selected);
+
+			ResultSet rs_selectedClass = client.readRowSet();
 
 			Set<Integer> classSet = new HashSet<Integer>();
 			while (rs_selectedClass.next()) {
@@ -853,8 +911,9 @@ public class Sql {
 		try {
 			String sql = "select * from Course";
 
-			ResultSet rs = connection.prepareStatement(sql).executeQuery();
-
+			Client client = new Client();
+			client.writeSql(sql);
+			ResultSet rs = client.readRowSet();
 			int row = 0;
 			while (rs.next())
 				row++;
@@ -863,12 +922,17 @@ public class Sql {
 			int col = 3;
 			Object[][] o = new Object[row][col];
 
-			rs = connection.prepareStatement(sql).executeQuery();
-
+			client = new Client();
+			client.writeSql(sql);
+			rs = client.readRowSet();
 			if (tid == null)
 				tid = -1;
 			String sql_selected = "select coid from TCo where tid='" + tid + "'";
-			ResultSet rs_selectedCourse = connection.prepareStatement(sql_selected).executeQuery();
+
+			client = new Client();
+			client.writeSql(sql_selected);
+
+			ResultSet rs_selectedCourse = client.readRowSet();
 
 			Set<Integer> courseSet = new HashSet<Integer>();
 			while (rs_selectedCourse.next()) {
@@ -891,7 +955,9 @@ public class Sql {
 	static Object[][] allCourse() {// 显示所有课程
 		try {
 			String sql = "select * from Course";
-			ResultSet rs = connection.prepareStatement(sql).executeQuery();
+			Client client = new Client();
+			client.writeSql(sql);
+			ResultSet rs = client.readRowSet();
 			int row = 0;
 			while (rs.next())
 				row++;
@@ -900,7 +966,9 @@ public class Sql {
 			int col = 2;
 			Object[][] o = new Object[row][col];
 
-			rs = connection.prepareStatement(sql).executeQuery();
+			client = new Client();
+			client.writeSql(sql);
+			rs = client.readRowSet();
 			for (int i = 0; rs.next(); i++) {
 				o[i][0] = rs.getString(1);
 				o[i][1] = rs.getString(2);
@@ -917,7 +985,9 @@ public class Sql {
 		try {
 			String sql = "select * from Student";
 
-			ResultSet rs = connection.prepareStatement(sql).executeQuery();
+			Client client = new Client();
+			client.writeSql(sql);
+			ResultSet rs = client.readRowSet();
 			int row = 0;
 			while (rs.next())
 				row++;
@@ -925,12 +995,16 @@ public class Sql {
 				return new Object[][] { new Object[] { "右键添加学生" } };
 			int col = 4;
 			Object[][] o = new Object[row][col];
-			rs = connection.prepareStatement(sql).executeQuery();
-
+			client = new Client();
+			client.writeSql(sql);
+			rs = client.readRowSet();
 			if (clid == null)
 				clid = -1;
 			String sql_selected = "select sid from SCl where clid='" + clid + "'";
-			ResultSet rs_selectedStudent = connection.prepareStatement(sql_selected).executeQuery();
+
+			client = new Client();
+			client.writeSql(sql_selected);
+			ResultSet rs_selectedStudent = client.readRowSet();
 
 			Set<Integer> studentSet = new HashSet<Integer>();
 			while (rs_selectedStudent.next()) {
@@ -967,7 +1041,7 @@ public class Sql {
 						Object sid = t.getValueAt(t.getSelectedRow(), 0);
 						String sql = "update Answer set score='" + comboBox.getSelectedItem() + "'where qid='" + qid
 								+ "' and sid='" + sid + "'";
-						connection.prepareStatement(sql).execute();
+						new Client().writeSql(sql);
 					} catch (Exception e1) {
 						return;
 					}
@@ -986,14 +1060,18 @@ public class Sql {
 					: "select coid,name from Course where coid in(select coid from CoCl a,SCl b where sid='" + id
 							+ "'and a.clid=b.clid)";
 
-			ResultSet rs = connection.prepareStatement(sql).executeQuery();
+			Client client = new Client();
+			client.writeSql(sql);
+			ResultSet rs = client.readRowSet();
 			int row = 0;
 			while (rs.next())
 				row++;
 
 			int col = 2;
 			Object o[][] = new Object[row][col];
-			rs = connection.prepareStatement(sql).executeQuery();
+			client = new Client();
+			client.writeSql(sql);
+			rs = client.readRowSet();
 			for (int i = 0; rs.next(); i++) {
 				for (int j = 0; j < col; j++) {
 					o[i][j] = rs.getObject(j + 1);
@@ -1017,14 +1095,18 @@ public class Sql {
 					: "select a.sid,a.name,b.clid,c.name from Student a,SCl b,Class c,CoCl d where a.sid=b.sid and b.clid=c.clid and d.clid=b.clid and coid='"
 							+ coid + "'and b.clid in (select clid from SCl	where sid='" + id + "')";
 
-			ResultSet rs = connection.prepareStatement(sql).executeQuery();
+			Client client = new Client();
+			client.writeSql(sql);
+			ResultSet rs = client.readRowSet();
 			int row = 0;
 			while (rs.next())
 				row++;
 
 			int col = 4;
 			Object o[][] = new Object[row][col];
-			rs = connection.prepareStatement(sql).executeQuery();
+			client = new Client();
+			client.writeSql(sql);
+			rs = client.readRowSet();
 			for (int i = 0; rs.next(); i++) {
 				for (int j = 0; j < col; j++) {
 					o[i][j] = rs.getObject(j + 1);
@@ -1041,7 +1123,9 @@ public class Sql {
 	static Object[][] allCourseFromTeacher(int qid, int tid) {
 		try {
 			String sql = "select coid from TCo where tid='" + tid + "'";
-			ResultSet rs = connection.prepareStatement(sql).executeQuery();
+			Client client = new Client();
+			client.writeSql(sql);
+			ResultSet rs = client.readRowSet();
 			int row = 0;
 			while (rs.next())
 				row++;
@@ -1050,10 +1134,16 @@ public class Sql {
 			int col = 3;
 			Object[][] o = new Object[row][col];
 
-			rs = connection.prepareStatement(sql).executeQuery();
+			client = new Client();
+			client.writeSql(sql);
+			rs = client.readRowSet();
 
 			String sql_set = "select coid from Question where qid='" + qid + "'";
-			ResultSet rs_selectedCourse = connection.prepareStatement(sql_set).executeQuery();
+
+			client = new Client();
+			client.writeSql(sql_set);
+
+			ResultSet rs_selectedCourse = client.readRowSet();
 
 			int selecedCoid = -1;
 			if (rs_selectedCourse.next())
@@ -1064,7 +1154,11 @@ public class Sql {
 				o[i][0] = coid;
 				// System.out.println("question coid="+coid);
 				String sql_coName = "select name from Course where coid='" + coid + "'";
-				ResultSet rs_coName = connection.prepareStatement(sql_coName).executeQuery();
+
+				client = new Client();
+				client.writeSql(sql_coName);
+
+				ResultSet rs_coName = client.readRowSet();
 				if (rs_coName.next()) {
 					o[i][1] = rs_coName.getString(1);
 				}
@@ -1083,7 +1177,9 @@ public class Sql {
 					? "select a.className from TCl a,CoCl b where a.tid='" + id
 							+ "'and a.className=b.className and b.courseName='" + courseName + "'"
 					: "select className from SCl where sid='" + id + "'";
-			ResultSet rs = connection.prepareStatement(sql).executeQuery();
+			Client client = new Client();
+			client.writeSql(sql);
+			ResultSet rs = client.readRowSet();
 			Vector<String> v = new Vector<String>();
 			while (rs.next()) {
 				v.add(rs.getString(1));
@@ -1098,7 +1194,9 @@ public class Sql {
 	static Vector<String> allStudent(Object courseName) {
 		try {
 			String sql = "select name from Student a,SCl b where a.sid=b.sid and b.className='" + courseName + "'";
-			ResultSet rs = connection.prepareStatement(sql).executeQuery();
+			Client client = new Client();
+			client.writeSql(sql);
+			ResultSet rs = client.readRowSet();
 			Vector<String> v = new Vector<String>();
 			while (rs.next()) {
 				v.add(rs.getString(1));
@@ -1126,7 +1224,9 @@ public class Sql {
 			String sql = "select beginTime,score from Question a,Answer b where coid='" + coid
 					+ "'and a.qid=b.qid and sid in(select a.sid from SCl a,Student b where clid='" + clid
 					+ "' and b.sid='" + sid + "' and a.sid=b.sid)";
-			ResultSet rs = connection.prepareStatement(sql).executeQuery();
+			Client client = new Client();
+			client.writeSql(sql);
+			ResultSet rs = client.readRowSet();
 			while (rs.next()) {
 				v.add(rs.getDate(1));// 日期
 				v.add(rs.getInt(2));// 分数
@@ -1141,8 +1241,9 @@ public class Sql {
 	static Object[][] allClassFromQuestion(int qid, int tid) {// 该老师所教所有班级，被题目选的班级将打上勾
 		try {
 			String sql = "select clid from TCl where tid='" + tid + "'";
-			ResultSet rs = connection.prepareStatement(sql).executeQuery();
-
+			Client client = new Client();
+			client.writeSql(sql);
+			ResultSet rs = client.readRowSet();
 			int row = 0;
 			while (rs.next())
 				row++;
@@ -1151,9 +1252,15 @@ public class Sql {
 			int col = 3;
 			Object[][] o = new Object[row][col];
 
-			rs = connection.prepareStatement(sql).executeQuery();
+			client = new Client();
+			client.writeSql(sql);
+			rs = client.readRowSet();
 			String sql_set = "select clid from QCl where qid='" + qid + "'";
-			ResultSet rs_selectedClass = connection.prepareStatement(sql_set).executeQuery();
+
+			client = new Client();
+			client.writeSql(sql_set);
+
+			ResultSet rs_selectedClass = client.readRowSet();
 
 			Set<Integer> classSet = new HashSet<Integer>();
 			while (rs_selectedClass.next()) {
@@ -1164,7 +1271,11 @@ public class Sql {
 				int clid = rs.getInt(1);
 				o[i][0] = clid;
 				String sql_clName = "select name from Class where clid='" + clid + "'";
-				ResultSet rs_clName = connection.prepareStatement(sql_clName).executeQuery();
+
+				client = new Client();
+				client.writeSql(sql);
+
+				ResultSet rs_clName = client.readRowSet();
 				if (rs_clName.next())
 					o[i][1] = rs_clName.getString(1);
 
