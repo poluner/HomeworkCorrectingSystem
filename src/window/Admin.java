@@ -291,9 +291,9 @@ public class Admin extends JFrame implements MouseListener {
 			}
 
 			public boolean isCellEditable(int row, int column) {// 返回true表示能编辑，false表示不能编辑
-				if (column == 0||tables[0].getSelectedRow() == -1&&column==2)//左边表格没有选择，右边的就不能打勾
+				if (column == 0 || tables[0].getSelectedRow() == -1 && column == 2) // 左边表格没有选择，右边的就不能打勾
 					return false;
-			
+
 				return true;
 			}
 		});
@@ -323,7 +323,7 @@ public class Admin extends JFrame implements MouseListener {
 					}
 
 					public boolean isCellEditable(int row, int column) {// 返回true表示能编辑，false表示不能编辑
-						if (column==0||tables[2].getSelectedRow() == -1&&column==3)//左边没点，右边就不能打勾
+						if (column == 0 || tables[2].getSelectedRow() == -1 && column == 3) // 左边没点，右边就不能打勾
 							return false;
 						return true;
 					}
