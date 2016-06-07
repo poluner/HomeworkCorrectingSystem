@@ -251,7 +251,8 @@ public class Person extends JFrame implements MouseListener {
 			}
 			
 			//单击显示相似度
-			refreshAnswerTable();
+			if (table_answer.getSelectedColumn() != 3)
+				refreshAnswerTable();
 		}
 		if (e.getSource() == menuItems[0]) {// 上传题目
 			Sql.uploadQuestion(id);
