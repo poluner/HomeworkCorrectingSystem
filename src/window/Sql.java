@@ -1208,30 +1208,56 @@ public class Sql {
 		return null;
 	}
 
-	static Vector<Object> allPoint(JTable t, JTable t1) {
+	static Vector<Point>[] allPoint(JTable t, JTable t1) {// 人，行，4个值
 
 		try {
 			int row = t.getSelectedRow();
 			if (row == -1)
 				return null;
 			Object coid = t.getValueAt(row, 0);
-			int row1 = t1.getSelectedRow();
-			if (row1 == -1)
+
+			int rows1[] = t1.getSelectedRows();
+			if (rows1.length == 0)
 				return null;
-			Object sid = t1.getValueAt(row1, 0);
-			Object clid = t1.getValueAt(row1, 2);
-			Vector<Object> v = new Vector<Object>();
-			String sql = "select beginTime,score from Question a,Answer b where coid='" + coid
-					+ "'and a.qid=b.qid and sid in(select a.sid from SCl a,Student b where clid='" + clid
-					+ "' and b.sid='" + sid + "' and a.sid=b.sid)";
-			Client client = new Client();
-			client.writeSql(sql);
-			ResultSet rs = client.readRowSet();
-			while (rs.next()) {
-				v.add(rs.getDate(1));// 日期
-				v.add(rs.getInt(2));// 分数
+
+			Vector<Point> vs[] = new Vector[rows1.length];
+			for (int i = 0; i < vs.length; i++) {
+				vs[i] = new Vector<Point>();
 			}
-			return v;
+
+			int maxSize = 0;
+			Vector<Point> maxv = null;
+			for (int i = 0; i < rows1.length; i++) {
+
+				Object sid = t1.getValueAt(rows1[i], 0);
+				Object clid = t1.getValueAt(rows1[i], 2);
+
+				String sql = "select a.qid,score from Question a,Answer b where coid='" + coid
+						+ "'and a.qid=b.qid and sid in(select a.sid from SCl a,Student b where clid='" + clid
+						+ "' and b.sid='" + sid + "' and a.sid=b.sid)";
+				Client client = new Client();
+				client.writeSql(sql);
+
+				ResultSet rs = client.readRowSet();
+
+				int x = 0;
+				while (rs.next()) {
+					vs[i].add(new Point(rs.getInt(1), rs.getObject(2), x += Point.space));
+				}
+				if (vs[i].size() > maxSize) {
+					maxSize = vs[i].size();
+					maxv = vs[i];
+				}
+			}
+			if (maxv == null)
+				return null;
+			for (int i = 0; i < rows1.length; i++) {
+				for (int j = vs[i].size(); j < maxv.size(); j++) {
+					vs[i].add(new Point(maxv.elementAt(j).qid, 0, maxv.elementAt(j).x));
+				}
+			}
+
+			return vs;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

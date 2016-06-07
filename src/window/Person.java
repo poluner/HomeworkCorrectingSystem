@@ -1,8 +1,12 @@
 package window;
 
+import java.awt.BasicStroke;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.EventQueue;
+import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.event.ActionEvent;
@@ -30,6 +34,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.JComboBox;
 import javax.swing.DefaultCellEditor;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JMenu;
@@ -52,30 +57,50 @@ public class Person extends JFrame implements MouseListener {
 
 	private JPanel contentPane_view = new JPanel();
 	private JPanel panel_advanceChart = new JPanel() {
-		public void paint(Graphics g) {
-			super.paint(g);
+		public void paint(Graphics g0) {
+			super.paint(g0);
+			setBackground(Color.white);
 
-			int space = 50;// 行间距设为50
-			int x = 50 - startx;// 起始x为50-startx
-			int y = panel_advanceChart.getHeight() - 50;// x轴位置
-			int perx = 0, pery = 0;
-
-			Vector<Object> point = Sql.allPoint(table_course, table_scl);
-			if (point == null)
+			Point.basey = panel_advanceChart.getHeight() - 50;
+			Vector<Point>[] vpoints = Sql.allPoint(table_course, table_scl);
+			if (vpoints == null)
 				return;
-			scrollBar_1.setMaximum(point.size() / 2 + 1);
-			for (int i = 0; i < point.size(); i += 2) {
-				Date date = (Date) point.elementAt(i);
-				int score = (int) point.elementAt(i + 1);
-				if (i == 0) {// 起点前面没有点，也就没有线
-					perx = x;
-					pery = y - 5 * score;
+			scrollBar_1.setMaximum(vpoints[0].size());
+
+			int rows[] = table_scl.getSelectedRows();
+
+			Graphics2D g = (Graphics2D) g0;
+			g.setStroke(new BasicStroke(3.0f));
+			g.setFont(new Font("GBK", Font.PLAIN, 20));
+
+			Color colors[] = new Color[7];
+			colors[0] = Color.red;
+			colors[1] = Color.orange;
+			colors[2] = Color.yellow;
+			colors[3] = Color.green;
+			colors[4] = Color.blue;
+			colors[5] = Color.black;
+			colors[6] = Color.cyan;
+
+			for (int r = 0; r < vpoints.length; r++) {
+				String name = table_scl.getValueAt(rows[r], 1).toString();
+				g.setColor(colors[r % 7]);
+				g.drawString(name, 0, (r + 1) * 20);
+				Vector<Point> vpoint = vpoints[r];
+				for (int i = 0; i < vpoint.size(); i++) {
+					int qid = vpoint.elementAt(i).qid;
+					int score = vpoint.elementAt(i).score;
+					int x = vpoint.elementAt(i).x;
+					int y = vpoint.elementAt(i).y;
+					if (i == 0) {// 起点前面没有点，也就没有线
+						g.drawLine(x, y, x, y);
+						g.drawString("作业" + qid + "得分" + score, x, y);
+					} else {
+						int p[] = vpoint.elementAt(i - 1).getXY();
+						g.drawLine(p[0], p[1], x, y);
+						g.drawString("作业" + qid + "得分" + score, x, y);
+					}
 				}
-				g.drawLine(perx, pery, x, y - 5 * score);
-				g.drawString("(" + date + ")" + score + "分", x, y - 5 * score);
-				perx = x;
-				pery = y - 5 * score;
-				x += space;
 			}
 		}
 	};
@@ -83,7 +108,13 @@ public class Person extends JFrame implements MouseListener {
 	private JTable table_answer = new JTable();
 
 	// 进步曲线图
-	private JPanel panel = new JPanel();
+	private JPanel panel = new JPanel() {
+		public void paintComponent(Graphics g) {
+			super.paintComponent(g);
+			ImageIcon ii = new ImageIcon("image_background.jpg");
+			g.drawImage(ii.getImage(), 0, 0, getWidth(), getHeight(), ii.getImageObserver());
+		}
+	};
 	private JTable table_course = new JTable();
 	private JTable table_scl = new JTable();
 	private JScrollBar scrollBar_1 = new JScrollBar();
@@ -96,7 +127,7 @@ public class Person extends JFrame implements MouseListener {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				new Sql();
-				new Person(false, 2);
+				new Person(true, 1);
 			}
 		});
 	}
@@ -108,6 +139,11 @@ public class Person extends JFrame implements MouseListener {
 		this.isTeacher = isTeacher;
 		this.id = id;
 		setTitle(Sql.yourName(isTeacher, id));
+
+		if (isTeacher)
+			setIconImage(new ImageIcon("icon_teacher.png").getImage());
+		else
+			setIconImage(new ImageIcon("icon_student.png").getImage());
 
 		for (int i = 0; i < menuItems.length; i++) {
 			popupMenu_QuestionSet.add(menuItems[i]);
@@ -132,7 +168,13 @@ public class Person extends JFrame implements MouseListener {
 		JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
 		contentPane_view.add(tabbedPane, BorderLayout.CENTER);
 
-		JSplitPane splitPane = new JSplitPane();
+		JSplitPane splitPane = new JSplitPane() {
+			public void paintComponent(Graphics g) {
+				super.paintComponent(g);
+				ImageIcon ii = new ImageIcon("image_background.jpg");
+				g.drawImage(ii.getImage(), 0, 0, getWidth(), getHeight(), ii.getImageObserver());
+			}
+		};
 		splitPane.setDividerLocation(getWidth() / 2);
 		tabbedPane.addTab("查看", null, splitPane, null);
 
@@ -179,7 +221,7 @@ public class Person extends JFrame implements MouseListener {
 		scrollPane.setViewportView(table_course);
 
 		splitPane_2.setRightComponent(scrollPane_1);
-		table_scl.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		table_scl.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
 		scrollPane_1.setViewportView(table_scl);
 
@@ -195,6 +237,19 @@ public class Person extends JFrame implements MouseListener {
 		table_scl.addMouseListener(this);
 
 		setVisible(true);
+
+		// 设置透明
+		scrollPane_question.setOpaque(false);
+		scrollPane_question.getViewport().setOpaque(false);
+		scrollPane_answer.setOpaque(false);
+		scrollPane_answer.getViewport().setOpaque(false);
+		table_question.setOpaque(false);
+		splitPane_1.setOpaque(false);
+		splitPane_2.setOpaque(false);
+		scrollPane.setOpaque(false);
+		scrollPane.getViewport().setOpaque(false);
+		scrollPane_1.setOpaque(false);
+		scrollPane_1.getViewport().setOpaque(false);
 	}
 
 	@Override

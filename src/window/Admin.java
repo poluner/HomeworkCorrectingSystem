@@ -3,10 +3,12 @@ package window;
 import java.awt.BorderLayout;
 
 import java.awt.EventQueue;
+import java.awt.Graphics;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.Vector;
 
+import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -56,7 +58,6 @@ public class Admin extends JFrame implements MouseListener {
 			public void run() {
 				new Sql();
 				new Admin();
-
 			}
 		});
 	}
@@ -65,6 +66,7 @@ public class Admin extends JFrame implements MouseListener {
 	 * Create the frame.
 	 */
 	public Admin() {
+		setIconImage(new ImageIcon("icon_admin.png").getImage());
 		for (int i = 0; i < menuItems.length; i++) {
 			popupMenu.add(menuItems[i]);
 			menuItems[i].addMouseListener(this);
@@ -81,7 +83,13 @@ public class Admin extends JFrame implements MouseListener {
 
 		JSplitPane splitPanes[] = new JSplitPane[4];
 		for (int i = 0; i < 4; i++) {
-			splitPanes[i] = new JSplitPane();
+			splitPanes[i] = new JSplitPane() {
+				public void paintComponent(Graphics g) {
+					super.paintComponent(g);
+					ImageIcon ii = new ImageIcon("image_background.jpg");
+					g.drawImage(ii.getImage(), 0, 0, getWidth(), getHeight(), ii.getImageObserver());
+				}
+			};
 			splitPanes[i].setDividerLocation(getWidth() / 2);
 		}
 
@@ -94,6 +102,8 @@ public class Admin extends JFrame implements MouseListener {
 
 		for (int i = 0; i < 8; i++) {
 			scrollPanes[i] = new JScrollPane();
+			scrollPanes[i].setOpaque(false);
+			scrollPanes[i].getViewport().setOpaque(false);
 		}
 
 		for (int i = 0; i < 4; i++) {

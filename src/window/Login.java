@@ -2,6 +2,7 @@ package window;
 
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
+import java.awt.Graphics;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -11,9 +12,11 @@ import client.Client;
 
 import javax.swing.JRadioButton;
 import javax.swing.ButtonGroup;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
+import javax.swing.UIManager;
 import javax.swing.JPasswordField;
 import java.awt.event.ActionListener;
 import java.net.Socket;
@@ -32,6 +35,7 @@ public class Login extends JFrame {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
+					UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());// 设置为系统风格
 					new Sql();
 					Login frame = new Login();
 					frame.setVisible(true);
@@ -46,10 +50,16 @@ public class Login extends JFrame {
 	 * Create the frame.
 	 */
 	public Login() {
-
+		setIconImage(new ImageIcon("icon_login.png").getImage());
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 450, 300);
-		contentPane = new JPanel();
+		contentPane = new JPanel() {
+			public void paintComponent(Graphics g) {
+				super.paintComponent(g);
+				ImageIcon ii = new ImageIcon("image_background.jpg");
+				g.drawImage(ii.getImage(), 0, 0, getWidth(), getHeight(), ii.getImageObserver());
+			}
+		};
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		contentPane.setLayout(new BorderLayout(0, 0));
 		setContentPane(contentPane);
@@ -108,5 +118,10 @@ public class Login extends JFrame {
 		passwordField.setBounds(172, 107, 127, 22);
 		panel_1.add(passwordField);
 
+		// 透明
+		panel.setOpaque(false);
+		panel_1.setOpaque(false);
+		radioButton_teacher.setOpaque(false);
+		radioButton_student.setOpaque(false);
 	}
 }

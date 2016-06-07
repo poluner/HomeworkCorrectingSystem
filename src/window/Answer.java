@@ -2,7 +2,9 @@ package window;
 
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
+import java.awt.Graphics;
 
+import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
@@ -33,10 +35,17 @@ public class Answer extends JFrame {
 	 * Create the frame.
 	 */
 	public Answer(int qid, int sid) {
+		setIconImage(new ImageIcon("icon_answer.png").getImage());
 		setTitle("学生 " + sid + " 的答案");
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		setBounds(100, 100, 450, 300);
-		contentPane = new JPanel();
+		contentPane = new JPanel() {
+			public void paintComponent(Graphics g) {
+				super.paintComponent(g);
+				ImageIcon ii = new ImageIcon("image_background.jpg");
+				g.drawImage(ii.getImage(), 0, 0, getWidth(), getHeight(), ii.getImageObserver());
+			}
+		};
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		contentPane.setLayout(new BorderLayout(0, 0));
 		setContentPane(contentPane);
@@ -46,8 +55,13 @@ public class Answer extends JFrame {
 
 		JTextArea textArea = new JTextArea(Sql.showAnswer(qid, sid));
 		scrollPane.setViewportView(textArea);
-		
+
 		setVisible(true);
+
+		// 透明
+		scrollPane.setOpaque(false);
+		scrollPane.getViewport().setOpaque(false);
+		textArea.setOpaque(false);
 	}
 
 }
