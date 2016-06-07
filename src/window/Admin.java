@@ -19,6 +19,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.JSplitPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.UIManager;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 
@@ -56,8 +57,13 @@ public class Admin extends JFrame implements MouseListener {
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
-				new Sql();
-				new Admin();
+				try {
+					UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());// 设置为系统风格
+					new Sql();
+					new Admin();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 			}
 		});
 	}
