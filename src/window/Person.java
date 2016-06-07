@@ -115,9 +115,9 @@ public class Person extends JFrame implements MouseListener {
 		}
 
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		 
+
 		setBounds(100, 100, 850, 505);
-		setExtendedState(JFrame.MAXIMIZED_BOTH);//设置全屏，方便显示曲线图
+		setExtendedState(JFrame.MAXIMIZED_BOTH);// 设置全屏，方便显示曲线图
 
 		contentPane_view.setBorder(new EmptyBorder(5, 5, 5, 5));
 		contentPane_view.setLayout(new BorderLayout(0, 0));
@@ -239,7 +239,7 @@ public class Person extends JFrame implements MouseListener {
 			}
 		}
 		if (e.getSource() == table_answer) {
-			if (e.getClickCount() == 2) {//双击弹出答案
+			if (e.getClickCount() == 2) {// 双击弹出答案
 				String curDate = dateFormat.format(new Date());
 				String endTime = table_question.getValueAt(table_question.getSelectedRow(), 3).toString();
 				if (!isTeacher && curDate.compareTo(endTime) < 0)
@@ -249,9 +249,10 @@ public class Person extends JFrame implements MouseListener {
 				int sid = Integer.parseInt(table_answer.getValueAt(table_answer.getSelectedRow(), 0).toString());
 				new Answer(qid, sid);
 			}
-			
-			//单击显示相似度
-			refreshAnswerTable();
+
+			// 单击显示相似度
+			if (table_answer.getSelectedColumn() != 3)
+				refreshAnswerTable();
 		}
 		if (e.getSource() == menuItems[0]) {// 上传题目
 			Sql.uploadQuestion(id);
@@ -259,10 +260,9 @@ public class Person extends JFrame implements MouseListener {
 		} else if (e.getSource() == menuItems[1]) {// 删除题目
 			Sql.deleteQuestion(table_question);
 			refreshQuestionTable();
-		}
-		else if(e.getSource()==menuItems[2]){//刷新
+		} else if (e.getSource() == menuItems[2]) {// 刷新
 			refreshQuestionTable();
-			refreshQuestionTable();
+			refreshAnswerTable();
 		}
 
 		if (e.getSource() == table_course) {
@@ -291,22 +291,22 @@ public class Person extends JFrame implements MouseListener {
 	}
 
 	void refreshAnswerTable() {
-		table_answer.setModel(
-				new DefaultTableModel(Sql.allAnswer(table_question,table_answer), new String[] { "学号", "姓名", "班级", "分数","相似度" }) {
-					Class[] columnTypes = new Class[] { String.class, String.class, String.class, String.class , String.class};
+		table_answer.setModel(new DefaultTableModel(Sql.allAnswer(table_question, table_answer),
+				new String[] { "学号", "姓名", "班级", "分数", "相似度" }) {
+			Class[] columnTypes = new Class[] { String.class, String.class, String.class, String.class, String.class };
 
-					public Class getColumnClass(int columnIndex) {
-						return columnTypes[columnIndex];
-					}
+			public Class getColumnClass(int columnIndex) {
+				return columnTypes[columnIndex];
+			}
 
-					public boolean isCellEditable(int row, int column) {// 返回true表示能编辑，false表示不能编辑
-						if (!isTeacher) // 学生什么都不可编辑
-							return false;
-						if (column == 3)
-							return true;
-						return false;
-					}
-				});
+			public boolean isCellEditable(int row, int column) {// 返回true表示能编辑，false表示不能编辑
+				if (!isTeacher) // 学生什么都不可编辑
+					return false;
+				if (column == 3)
+					return true;
+				return false;
+			}
+		});
 		Sql.comBoxUploadScore(table_answer, table_question);
 	}
 

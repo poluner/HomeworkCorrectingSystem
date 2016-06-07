@@ -32,7 +32,6 @@ public class Login extends JFrame {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-
 					new Sql();
 					Login frame = new Login();
 					frame.setVisible(true);
