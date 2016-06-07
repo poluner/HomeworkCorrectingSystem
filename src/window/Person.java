@@ -263,7 +263,7 @@ public class Person extends JFrame implements MouseListener {
 		}
 		else if(e.getSource()==menuItems[2]){//刷新
 			refreshQuestionTable();
-			refreshQuestionTable();
+			refreshAnswerTable();
 		}
 
 		if (e.getSource() == table_course) {
