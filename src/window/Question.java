@@ -7,8 +7,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-//import java.sql.Date;
-import java.text.SimpleDateFormat;
 
 import java.util.Date;
 
@@ -22,7 +20,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
-import javax.swing.JComboBox;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
@@ -30,8 +27,6 @@ import javax.swing.text.JTextComponent;
 import javax.swing.ListSelectionModel;
 
 public class Question extends JFrame implements ActionListener {
-	public static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-
 	private int qid;
 	private int id;
 	private boolean isTeacher;
@@ -57,12 +52,7 @@ public class Question extends JFrame implements ActionListener {
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
-				try {
-					new Sql();
-					Question frame = new Question(1, false, 1);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
+				new Question(1, false, 1);
 			}
 		});
 	}
@@ -80,7 +70,7 @@ public class Question extends JFrame implements ActionListener {
 				textArea_question, textArea_answer, textArea_yourAnswer });
 
 		if (isTeacher == false) {
-			String curDate = dateFormat.format(new Date());
+			String curDate = Sql.format.format(new Date());
 			if (curDate.compareTo(textField_endTime.getText()) > 0) {
 				overtime = true;
 				setTitle("题目：" + qid + " 提交时间结束");
@@ -299,15 +289,14 @@ public class Question extends JFrame implements ActionListener {
 	}
 
 	void setPower() {
-
 		boolean nototime = false;
-		String curDate = dateFormat.format(new Date());
+		String curDate = Sql.format.format(new Date());
 		if (!isTeacher && curDate.compareTo(textField_beginTime.getText()) < 0)
 			nototime = true;
 
-		button_question.setEnabled(isTeacher);
-		button_answer.setEnabled(isTeacher);
-		button_yourAnswer.setEnabled(!isTeacher && !overtime && !nototime);// 学生，时间在开始和结束时间之内
+		button_question.setVisible(isTeacher);
+		button_answer.setVisible(isTeacher);
+		button_yourAnswer.setVisible(!isTeacher && !overtime && !nototime);// 学生，时间在开始和结束时间之内
 		textField_title.setEditable(isTeacher);
 		textField_beginTime.setEditable(isTeacher);
 		textField_endTime.setEditable(isTeacher);
@@ -315,8 +304,8 @@ public class Question extends JFrame implements ActionListener {
 		textArea_answer.setEditable(isTeacher);
 		textArea_answer.setVisible(isTeacher || overtime);
 		textArea_yourAnswer.setEditable(!isTeacher && !overtime && !nototime);// 学生，时间在开始和结束时间之内
-		table_course.setEnabled(isTeacher);
-		table_class.setEnabled(isTeacher);
+		table_course.setVisible(isTeacher);
+		table_class.setVisible(isTeacher);
 	}
 
 	@Override
@@ -331,12 +320,12 @@ public class Question extends JFrame implements ActionListener {
 				return;
 			}
 
-			dateFormat.setLenient(false);
+			Sql.format.setLenient(false);
 			Date date_beginTime = null;
 			Date date_endTime = null;
 			try {
-				date_beginTime = dateFormat.parse(beginTime);
-				date_endTime = dateFormat.parse(endTime);
+				date_beginTime = Sql.format.parse(beginTime);
+				date_endTime = Sql.format.parse(endTime);
 				if (beginTime.compareTo(endTime) > 0)
 					throw new Exception();// 开始时间大于结束时间
 			} catch (Exception e1) {

@@ -9,16 +9,9 @@ import com.sun.rowset.CachedRowSetImpl;
 public class Client {
 	Socket socket;
 
-	public Client() {
+	public Client(String sql) {// 一连接就会发送sql语句
 		try {
 			socket = new Socket("127.0.0.1", 4700);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	public void writeSql(String sql) {// 将sql序列化传输
-		try {
 			ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
 			oos.writeObject(sql);
 		} catch (Exception e) {
@@ -26,7 +19,7 @@ public class Client {
 		}
 	}
 
-	public CachedRowSetImpl readRowSet() {// 接收后反序列化
+	public CachedRowSetImpl readRowSet() {
 		try {
 			ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
 			CachedRowSetImpl crsi = (CachedRowSetImpl) ois.readObject();

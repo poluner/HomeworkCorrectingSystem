@@ -7,16 +7,8 @@ import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Vector;
 import javax.swing.JFrame;
@@ -28,16 +20,9 @@ import javax.swing.JSplitPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableColumn;
 
 import javax.swing.JTabbedPane;
-import javax.swing.JComboBox;
-import javax.swing.DefaultCellEditor;
-import javax.swing.DefaultComboBoxModel;
 import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.ListSelectionModel;
 
@@ -45,7 +30,6 @@ public class Person extends JFrame implements MouseListener {
 	boolean isTeacher;
 	int id;
 	private int startx = 0;
-	public static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
 	private JPopupMenu popupMenu_QuestionSet = new JPopupMenu();
 
@@ -126,8 +110,7 @@ public class Person extends JFrame implements MouseListener {
 
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
-				new Sql();
-				new Person(true, 1);
+				new Person(true, 5);
 			}
 		});
 	}
@@ -281,8 +264,11 @@ public class Person extends JFrame implements MouseListener {
 	public void mouseReleased(MouseEvent e) {// 还是释放时候好。。。。
 		if (e.getSource() == table_question) {
 			if (e.getClickCount() == 2) {
-				int qid = Integer.parseInt(table_question.getValueAt(table_question.getSelectedRow(), 0).toString());
-				new Question(qid, isTeacher, id);
+				String sqid = table_question.getValueAt(table_question.getSelectedRow(), 0).toString();
+				if (Sql.pattern.matcher(sqid).matches()) {
+					int qid = Integer.parseInt(sqid);
+					new Question(qid, isTeacher, id);
+				}
 			}
 
 			refreshAnswerTable();// 一点表格就立刻显示答案列表
@@ -295,19 +281,18 @@ public class Person extends JFrame implements MouseListener {
 		}
 		if (e.getSource() == table_answer) {
 			if (e.getClickCount() == 2) {// 双击弹出答案
-				String curDate = dateFormat.format(new Date());
+				String curDate = Sql.format.format(new Date());
 				String endTime = table_question.getValueAt(table_question.getSelectedRow(), 3).toString();
-				if (!isTeacher && curDate.compareTo(endTime) < 0)
-					return;// 时间还未结束，学生不可查看他人答案
-
-				int qid = Integer.parseInt(table_question.getValueAt(table_question.getSelectedRow(), 0).toString());
-				int sid = Integer.parseInt(table_answer.getValueAt(table_answer.getSelectedRow(), 0).toString());
-				new Answer(qid, sid);
+				if (isTeacher || curDate.compareTo(endTime) >= 0) {// 时间还未结束，学生不可查看他人答案
+					int qid = Integer
+							.parseInt(table_question.getValueAt(table_question.getSelectedRow(), 0).toString());
+					int sid = Integer.parseInt(table_answer.getValueAt(table_answer.getSelectedRow(), 0).toString());
+					Object score = table_answer.getValueAt(table_answer.getSelectedRow(), 3);
+					new Answer(qid, sid, isTeacher, score);
+				}
 			}
-
 			// 单击显示相似度
-			if (table_answer.getSelectedColumn() != 3)
-				refreshAnswerTable();
+			refreshAnswerTable();
 		}
 		if (e.getSource() == menuItems[0]) {// 上传题目
 			Sql.uploadQuestion(id);
@@ -355,14 +340,9 @@ public class Person extends JFrame implements MouseListener {
 			}
 
 			public boolean isCellEditable(int row, int column) {// 返回true表示能编辑，false表示不能编辑
-				if (!isTeacher) // 学生什么都不可编辑
-					return false;
-				if (column == 3)
-					return true;
 				return false;
 			}
 		});
-		Sql.comBoxUploadScore(table_answer, table_question);
 	}
 
 	void refreshSClTable(Object coid) {

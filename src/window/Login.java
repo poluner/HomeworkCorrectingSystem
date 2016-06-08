@@ -8,8 +8,6 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
-import client.Client;
-
 import javax.swing.JRadioButton;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
@@ -19,7 +17,6 @@ import javax.swing.JTextField;
 import javax.swing.UIManager;
 import javax.swing.JPasswordField;
 import java.awt.event.ActionListener;
-import java.net.Socket;
 import java.awt.event.ActionEvent;
 
 public class Login extends JFrame {
@@ -36,9 +33,7 @@ public class Login extends JFrame {
 			public void run() {
 				try {
 					UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());// 设置为系统风格
-					new Sql();
-					Login frame = new Login();
-					frame.setVisible(true);
+					new Login();
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -118,6 +113,7 @@ public class Login extends JFrame {
 		passwordField.setBounds(172, 107, 127, 22);
 		panel_1.add(passwordField);
 
+		setVisible(true);
 		// 透明
 		panel.setOpaque(false);
 		panel_1.setOpaque(false);

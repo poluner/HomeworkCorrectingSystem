@@ -6,11 +6,9 @@ import java.awt.EventQueue;
 import java.awt.Graphics;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.util.Vector;
 
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
-import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
@@ -21,7 +19,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.UIManager;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableColumn;
 
 public class Admin extends JFrame implements MouseListener {
 
@@ -59,7 +56,6 @@ public class Admin extends JFrame implements MouseListener {
 			public void run() {
 				try {
 					UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());// 设置为系统风格
-					new Sql();
 					new Admin();
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -205,54 +201,34 @@ public class Admin extends JFrame implements MouseListener {
 				Sql.selectTCl(tables[6], tables[7]);
 		}
 
-		if (e.getSource() == menuItems[0]) {// 0上传教师
-			Sql.uploadTeacher(tables[0]);
-			refreshTeacherTable();
-		}
-		if (e.getSource() == menuItems[1]) {// 1上传课程
-			Sql.uploadCourse(tables[1]);
-			refreshCourseTable(null);
-			refreshCourse1Table();
-		}
-		if (e.getSource() == menuItems[2]) {// 2上传班级
-			Sql.uploadClass(tables[2]);
-			refreshClassTable();
-			refreshClass1Table(null);
-		}
-		if (e.getSource() == menuItems[3]) {// 3上传学生
-			Sql.uploadStudent(tables[3]);
-			refreshStudentTable(null);
-		}
-		if (e.getSource() == menuItems[4]) {// 4删除教师
-			Sql.deleteTeacher(tables[0]);
-			refreshTeacherTable();
-		}
-		if (e.getSource() == menuItems[5]) {// 5删除课程
-			Sql.deleteCourse(tables[1]);
-			refreshCourseTable(null);
-			refreshCourse1Table();
-		}
-		if (e.getSource() == menuItems[6]) {// 6删除班级
-			Sql.deleteClass(tables[2]);
-			refreshClassTable();
-			refreshClass1Table(null);
-		}
-		if (e.getSource() == menuItems[7]) {// 7删除学生
-			Sql.deleteStudent(tables[3]);
-			refreshStudentTable(null);
-		}
-		if (e.getSource() == menuItems[8]) {// 8刷新
-			refreshAll();
-		}
-		if (e.getSource() == menuItems[9]) {// 9保存
-			Sql.updateTeacher(tables[0]);
-			Sql.updateCourse(tables[1]);
-			Sql.updateClass(tables[2]);
-			Sql.updateStudent(tables[3]);
-
-			refreshAll();
-
-			setTitle("保存成功");
+		for (int i = 0; i < menuItems.length; i++) {// 如果菜单被点就刷新全部
+			if (e.getSource() == menuItems[i]) {
+				if (i == 0)
+					Sql.uploadTeacher();
+				if (i == 1)
+					Sql.uploadCourse();
+				if (i == 2)
+					Sql.uploadClass();
+				if (i == 3)
+					Sql.uploadStudent();
+				if (i == 4)
+					Sql.deleteTeacher(tables[0]);
+				if (i == 5)
+					Sql.deleteCourse(tables[1]);
+				if (i == 6)
+					Sql.deleteClass(tables[2]);
+				if (i == 7)
+					Sql.deleteStudent(tables[3]);
+				if (i == 9) {
+					Sql.updateTeacher(tables[0]);
+					Sql.updateCourse(tables[1]);
+					Sql.updateClass(tables[2]);
+					Sql.updateStudent(tables[3]);
+					setTitle("保存成功");
+				}
+				refreshAll();
+				break;
+			}
 		}
 	}
 
