@@ -189,17 +189,8 @@ public class Person extends JFrame implements MouseListener {
 
 		splitPane_2.setLeftComponent(scrollPane);
 		table_course.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		table_course.setModel(new DefaultTableModel(Sql.allCourse(isTeacher, id), new String[] { "课程号", "课程" }) {
-			Class[] columnTypes = new Class[] { Object.class, Object.class };
-
-			public Class getColumnClass(int columnIndex) {
-				return columnTypes[columnIndex];
-			}
-
-			public boolean isCellEditable(int row, int column) {// 返回true表示能编辑，false表示不能编辑
-				return false;
-			}
-		});
+		refreshCourse();
+		
 
 		scrollPane.setViewportView(table_course);
 
@@ -273,7 +264,7 @@ public class Person extends JFrame implements MouseListener {
 
 			refreshAnswerTable();// 一点表格就立刻显示答案列表
 
-			if (e.getButton() == e.BUTTON3 && isTeacher) {// 这个要放在前面，只有老师有右键菜单
+			if (e.getButton() == e.BUTTON3) {// 这个要放在前面，只有老师有右键菜单
 				int row = table_question.rowAtPoint(e.getPoint());
 				table_question.setRowSelectionInterval(row, row);
 				popupMenu_QuestionSet.show(table_question, e.getX(), e.getY());
@@ -294,15 +285,17 @@ public class Person extends JFrame implements MouseListener {
 			// 单击显示相似度
 			refreshAnswerTable();
 		}
-		if (e.getSource() == menuItems[0]) {// 上传题目
+		if (e.getSource() == menuItems[0] && isTeacher) {// 老师上传题目
 			Sql.uploadQuestion(id);
 			refreshQuestionTable();
-		} else if (e.getSource() == menuItems[1]) {// 删除题目
+		} else if (e.getSource() == menuItems[1] && isTeacher) {// 老师删除题目
 			Sql.deleteQuestion(table_question);
 			refreshQuestionTable();
-		} else if (e.getSource() == menuItems[2]) {// 刷新
+		} else if (e.getSource() == menuItems[2]) {// 老师学生刷新
 			refreshQuestionTable();
 			refreshAnswerTable();
+			refreshCourse();
+			refreshSClTable(null);
 		}
 
 		if (e.getSource() == table_course) {
@@ -359,5 +352,18 @@ public class Person extends JFrame implements MouseListener {
 					}
 				});
 
+	}
+	void refreshCourse(){
+		table_course.setModel(new DefaultTableModel(Sql.allCourse(isTeacher, id), new String[] { "课程号", "课程" }) {
+			Class[] columnTypes = new Class[] { Object.class, Object.class };
+
+			public Class getColumnClass(int columnIndex) {
+				return columnTypes[columnIndex];
+			}
+
+			public boolean isCellEditable(int row, int column) {// 返回true表示能编辑，false表示不能编辑
+				return false;
+			}
+		});
 	}
 }

@@ -970,6 +970,7 @@ public class Sql {
 
 	static Object[][] allSCl(Object coid, boolean isTeacher, int id) {
 		try {
+			if(coid==null)return null;
 			String sql = isTeacher
 					? "select d.sid,d.name,b.clid,b.name from CoCl a,Class b,SCl c,Student d,TCo e where a.coid='"
 							+ coid + "' and a.clid=c.clid and a.clid=b.clid and c.sid=d.sid and e.tid='" + id
