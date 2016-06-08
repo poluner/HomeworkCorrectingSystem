@@ -1154,7 +1154,7 @@ public class Sql {
 				o[i][0] = clid;
 				String sql_clName = "select name from Class where clid='" + clid + "'";
 
-				ResultSet rs_clName = new Client(sql).readRowSet();
+				ResultSet rs_clName = new Client(sql_clName).readRowSet();
 				if (rs_clName.next())
 					o[i][1] = rs_clName.getString(1);
 

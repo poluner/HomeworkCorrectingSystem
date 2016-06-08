@@ -7,7 +7,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-
+import java.text.ParseException;
 import java.util.Date;
 
 import javax.swing.JFrame;
@@ -52,15 +52,16 @@ public class Question extends JFrame implements ActionListener {
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
-				new Question(1, false, 1);
+				new Question(1, true, 1);
 			}
 		});
 	}
 
 	/**
 	 * Create the frame.
+	 * @throws ParseException 
 	 */
-	public Question(int qid, Boolean isTeacher, int id) {// 如果不是teacher就不显示一些东西即可
+	public Question(int qid, Boolean isTeacher, int id)  {// 如果不是teacher就不显示一些东西即可
 		this.qid = qid;
 		this.id = id;
 		this.isTeacher = isTeacher;
@@ -71,9 +72,13 @@ public class Question extends JFrame implements ActionListener {
 
 		if (isTeacher == false) {
 			String curDate = Sql.format.format(new Date());
-			if (curDate.compareTo(textField_endTime.getText()) > 0) {
+			try{
+			if (Sql.format.parse(curDate).compareTo(Sql.format.parse(textField_endTime.getText().replace(" ", ""))) > 0) {
 				overtime = true;
 				setTitle("题目：" + qid + " 提交时间结束");
+			}
+			}catch(Exception e){
+				e.printStackTrace();
 			}
 		}
 
@@ -291,8 +296,12 @@ public class Question extends JFrame implements ActionListener {
 	void setPower() {
 		boolean nototime = false;
 		String curDate = Sql.format.format(new Date());
-		if (!isTeacher && curDate.compareTo(textField_beginTime.getText()) < 0)
+		try{
+		if (!isTeacher && Sql.format.parse(curDate).compareTo(Sql.format.parse(textField_beginTime.getText().replace(" ", ""))) < 0)
 			nototime = true;
+		}catch(Exception e){
+			e.printStackTrace();
+		}
 
 		button_question.setVisible(isTeacher);
 		button_answer.setVisible(isTeacher);
@@ -326,7 +335,8 @@ public class Question extends JFrame implements ActionListener {
 			try {
 				date_beginTime = Sql.format.parse(beginTime);
 				date_endTime = Sql.format.parse(endTime);
-				if (beginTime.compareTo(endTime) > 0)
+				
+				if (date_beginTime.compareTo(date_endTime) > 0)
 					throw new Exception();// 开始时间大于结束时间
 			} catch (Exception e1) {
 				setTitle("题目：" + qid + " 保存失败，时间填写有误");
